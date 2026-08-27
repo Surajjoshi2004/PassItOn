@@ -1,2 +1,14 @@
 node_modules/
+
+# Local and test secrets (keep .env.example as the template)
 .env
+.env.*
+!.env.example
+
+# Generated test/build output
+coverage/
+dist/
+*.log
+
+# Scratch files
+tmp_*.mjs

@@ -1,0 +1,21 @@
+# Dependencies
+**/node_modules/
+
+# Environment files and secrets (templates remain versionable)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Generated output
+**/coverage/
+**/dist/
+**/*.log
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local scratch files
+**/tmp_*.mjs
