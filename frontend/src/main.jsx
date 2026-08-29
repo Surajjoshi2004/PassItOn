@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { ArrowUpRight, Bell, BookOpen, ChevronDown, Heart, Laptop, Menu, Search, Send, Sofa, Sparkles, X } from "lucide-react";
+import { ArrowUpRight, Bell, BookOpen, ChevronDown, Eye, EyeOff, Heart, Laptop, Menu, Search, Send, Sofa, Sparkles, X } from "lucide-react";
 import "./styles.css";
 
 const API = import.meta.env.VITE_API_URL || "";
@@ -49,7 +49,37 @@ function App() {
   </div>;
 }
 
-function AuthModal({ onClose, onSuccess }) { const [mode, setMode] = useState("login"); const [form, setForm] = useState({ email: "", password: "", name: "", college: "", graduationYear: "" }); const [error, setError] = useState(""); const submit = async e => { e.preventDefault(); try { const result = await api(`/auth/${mode === "login" ? "login" : "register"}`, { method: "POST", body: JSON.stringify(form) }); if (mode === "login") { localStorage.setItem("passiton_token", result.token); localStorage.setItem("passiton_user", JSON.stringify(result.data)); onSuccess(result.data); } else { setMode("login"); setError("Account created. Please verify your email, then log in."); } } catch (x) { setError(x.message); } }; return <div className="overlay"><form className="modal" onSubmit={submit}><button type="button" className="close" onClick={onClose}><X/></button><p className="eyebrow">WELCOME TO PASSITON</p><h2>{mode === "login" ? "Welcome back." : "Join the loop."}</h2><p className="modal-copy">{mode === "login" ? "Pick up where you left off." : "A better way to buy and pass things on."}</p>{mode === "register" && <><input required placeholder="Your name" value={form.name} onChange={e => setForm({...form, name: e.target.value})}/><input required placeholder="College" value={form.college} onChange={e => setForm({...form, college: e.target.value})}/><input required placeholder="Graduation year" type="number" value={form.graduationYear} onChange={e => setForm({...form, graduationYear: e.target.value})}/></>}<input required type="email" placeholder="College email" value={form.email} onChange={e => setForm({...form, email: e.target.value})}/><input required type="password" placeholder="Password" value={form.password} onChange={e => setForm({...form, password: e.target.value})}/>{error && <div className="form-error">{error}</div>}<button className="primary-btn">{mode === "login" ? "Log in" : "Create account"} <ArrowUpRight size={17}/></button><button type="button" className="switch" onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}>{mode === "login" ? "New here? Create an account" : "Already have an account? Log in"}</button></form></div> }
+function AuthModal({ onClose, onSuccess }) {
+  const [mode, setMode] = useState("login");
+  const [form, setForm] = useState({ email: "", password: "", name: "", college: "", graduationYear: "" });
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const submit = async e => {
+    e.preventDefault();
+    try {
+      const result = await api(`/auth/${mode === "login" ? "login" : "register"}`, { method: "POST", body: JSON.stringify(form) });
+      if (mode === "login") {
+        localStorage.setItem("passiton_token", result.token);
+        localStorage.setItem("passiton_user", JSON.stringify(result.data));
+        onSuccess(result.data);
+      } else {
+        setMode("login");
+        setError("Account created. Please verify your email, then log in.");
+      }
+    } catch (x) { setError(x.message); }
+  };
+  return <div className="overlay"><form className="modal" onSubmit={submit}>
+    <button type="button" className="close" onClick={onClose}><X/></button>
+    <p className="eyebrow">WELCOME TO PASSITON</p><h2>{mode === "login" ? "Welcome back." : "Join the loop."}</h2>
+    <p className="modal-copy">{mode === "login" ? "Pick up where you left off." : "A better way to buy and pass things on."}</p>
+    {mode === "register" && <><input required placeholder="Your name" value={form.name} onChange={e => setForm({...form, name: e.target.value})}/><input required placeholder="College" value={form.college} onChange={e => setForm({...form, college: e.target.value})}/><input required placeholder="Graduation year" type="number" value={form.graduationYear} onChange={e => setForm({...form, graduationYear: e.target.value})}/></>}
+    <input required type="email" placeholder="College email" value={form.email} onChange={e => setForm({...form, email: e.target.value})}/>
+    <div className="password-field"><input required type={showPassword ? "text" : "password"} placeholder="Password" value={form.password} onChange={e => setForm({...form, password: e.target.value})}/><button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></div>
+    {error && <div className="form-error">{error}</div>}
+    <button className="primary-btn">{mode === "login" ? "Log in" : "Create account"} <ArrowUpRight size={17}/></button>
+    <button type="button" className="switch" onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}>{mode === "login" ? "New here? Create an account" : "Already have an account? Log in"}</button>
+  </form></div>;
+}
 
 function ListingModal({ onClose, onSuccess }) { const [form, setForm] = useState({ title: "", description: "", price: "", category: "textbooks", condition: "good" }); const [error, setError] = useState(""); const submit = async e => { e.preventDefault(); try { await api("/listings", { method: "POST", body: JSON.stringify(form) }); onSuccess(); } catch (x) { setError(x.message); } }; return <div className="overlay"><form className="modal" onSubmit={submit}><button type="button" className="close" onClick={onClose}><X/></button><p className="eyebrow">PASS IT ON</p><h2>List an item.</h2><input required placeholder="Title" value={form.title} onChange={e => setForm({...form, title: e.target.value})}/><textarea required placeholder="Tell its story" value={form.description} onChange={e => setForm({...form, description: e.target.value})}/><div className="form-row"><input required type="number" placeholder="Price (₹)" value={form.price} onChange={e => setForm({...form, price: e.target.value})}/><select value={form.category} onChange={e => setForm({...form, category: e.target.value})}>{["textbooks","electronics","furniture","appliances","clothing","bicycles","sports","others"].map(x => <option key={x}>{x}</option>)}</select></div><select value={form.condition} onChange={e => setForm({...form, condition: e.target.value})}>{["new","like-new","good","fair","poor"].map(x => <option key={x}>{x}</option>)}</select>{error && <div className="form-error">{error}</div>}<button className="primary-btn">Publish listing <Send size={16}/></button></form></div> }
 

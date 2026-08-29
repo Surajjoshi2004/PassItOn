@@ -15,8 +15,8 @@ const hashToken = (token) => {
 };
 
 const isEmailAllowed = (email) => {
-  const domain = email.split("@")[1];
-  return ALLOWED_EMAIL_DOMAINS.includes(domain);
+  const domain = email.trim().toLowerCase().split("@")[1];
+  return ALLOWED_EMAIL_DOMAINS.some((allowed) => allowed.trim().toLowerCase() === domain);
 };
 
 export const registerUser = async (req, res) => {

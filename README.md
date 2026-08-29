@@ -24,7 +24,7 @@ The backend keeps controllers thin and puts business rules in services. REST and
 
 ## Features
 
-- College-email registration, email verification, login, and JWT-protected routes.
+- College-email registration (`@lpu.co.in` and `@lpu.in`), email verification, login, and JWT-protected routes.
 - Listing creation, search/filtering, update, deletion, reservations, reviews, and reports.
 - Seller/buyer authorization for listings, reservations, conversations, and messages.
 - Socket.IO authentication, conversation rooms, real-time messages, and recipient notifications.
@@ -49,6 +49,18 @@ npm run dev
 ```
 
 The API runs at `http://localhost:5000` by default.
+
+### Demo account (local testing)
+
+Add the following to `backend/.env` before starting the backend:
+
+```dotenv
+SEED_DEMO_USER=true
+DEMO_USER_EMAIL=demo@lpu.in
+DEMO_USER_PASSWORD=DemoPass123!
+```
+
+The server creates a verified account if it does not already exist. Use those credentials on the login screen. For Docker, set the same variables in the PowerShell session before `docker compose up`.
 
 ### Frontend
 
