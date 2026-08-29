@@ -13,6 +13,17 @@ const isValidObjectId = (id) => mongoose.isValidObjectId(id);
 
 export const createListingHandler = async (req, res) => {
   try {
+    if (
+      req.body.images !== undefined &&
+      (!Array.isArray(req.body.images) ||
+        req.body.images.length > 5 ||
+        req.body.images.some((image) => typeof image !== "string" || !image.startsWith("data:image/")))
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Add up to 5 valid image files",
+      });
+    }
     const { confirmDuplicate, ...listingData } = req.body;
     const potentialDuplicates = await findPotentialDuplicates({
       sellerId: req.user.id,

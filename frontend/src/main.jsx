@@ -81,6 +81,29 @@ function AuthModal({ onClose, onSuccess }) {
   </form></div>;
 }
 
-function ListingModal({ onClose, onSuccess }) { const [form, setForm] = useState({ title: "", description: "", price: "", category: "textbooks", condition: "good" }); const [error, setError] = useState(""); const submit = async e => { e.preventDefault(); try { await api("/listings", { method: "POST", body: JSON.stringify(form) }); onSuccess(); } catch (x) { setError(x.message); } }; return <div className="overlay"><form className="modal" onSubmit={submit}><button type="button" className="close" onClick={onClose}><X/></button><p className="eyebrow">PASS IT ON</p><h2>List an item.</h2><input required placeholder="Title" value={form.title} onChange={e => setForm({...form, title: e.target.value})}/><textarea required placeholder="Tell its story" value={form.description} onChange={e => setForm({...form, description: e.target.value})}/><div className="form-row"><input required type="number" placeholder="Price (₹)" value={form.price} onChange={e => setForm({...form, price: e.target.value})}/><select value={form.category} onChange={e => setForm({...form, category: e.target.value})}>{["textbooks","electronics","furniture","appliances","clothing","bicycles","sports","others"].map(x => <option key={x}>{x}</option>)}</select></div><select value={form.condition} onChange={e => setForm({...form, condition: e.target.value})}>{["new","like-new","good","fair","poor"].map(x => <option key={x}>{x}</option>)}</select>{error && <div className="form-error">{error}</div>}<button className="primary-btn">Publish listing <Send size={16}/></button></form></div> }
+function ListingModal({ onClose, onSuccess }) {
+  const [form, setForm] = useState({ title: "", description: "", price: "", category: "textbooks", condition: "good", images: [] });
+  const [error, setError] = useState("");
+  const addPhotos = async ({ target }) => {
+    const files = [...target.files]; target.value = "";
+    if (!files.length) return;
+    if (files.some(file => !file.type.startsWith("image/"))) return setError("Please choose image files only.");
+    if (files.some(file => file.size > 1024 * 1024)) return setError("Each photo must be 1 MB or smaller.");
+    if (form.images.length + files.length > 5) return setError("You can add up to 5 photos.");
+    try {
+      const images = await Promise.all(files.map(file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); })));
+      setForm({ ...form, images: [...form.images, ...images] }); setError("");
+    } catch { setError("We could not read one of those photos."); }
+  };
+  const submit = async e => { e.preventDefault(); try { await api("/listings", { method: "POST", body: JSON.stringify(form) }); onSuccess(); } catch (x) { setError(x.message); } };
+  return <div className="overlay"><form className="modal" onSubmit={submit}>
+    <button type="button" className="close" onClick={onClose}><X/></button><p className="eyebrow">PASS IT ON</p><h2>List an item.</h2>
+    <input required placeholder="Title" value={form.title} onChange={e => setForm({...form, title: e.target.value})}/><textarea required placeholder="Tell its story" value={form.description} onChange={e => setForm({...form, description: e.target.value})}/>
+    <div className="form-row"><input required type="number" placeholder="Price (₹)" value={form.price} onChange={e => setForm({...form, price: e.target.value})}/><select value={form.category} onChange={e => setForm({...form, category: e.target.value})}>{["textbooks","electronics","furniture","appliances","clothing","bicycles","sports","others"].map(x => <option key={x}>{x}</option>)}</select></div><select value={form.condition} onChange={e => setForm({...form, condition: e.target.value})}>{["new","like-new","good","fair","poor"].map(x => <option key={x}>{x}</option>)}</select>
+    <label className="photo-picker">Add photos <span>Up to 5 · 1 MB each</span><input type="file" accept="image/*" multiple onChange={addPhotos}/></label>
+    {form.images.length > 0 && <div className="photo-previews">{form.images.map((image, index) => <div key={image} className="photo-preview"><img src={image} alt={`Selected photo ${index + 1}`}/><button type="button" onClick={() => setForm({...form, images: form.images.filter((_, i) => i !== index)})} aria-label={`Remove photo ${index + 1}`}><X size={14}/></button></div>)}</div>}
+    {error && <div className="form-error">{error}</div>}<button className="primary-btn">Publish listing <Send size={16}/></button>
+  </form></div>;
+}
 
 createRoot(document.getElementById("root")).render(<App />);

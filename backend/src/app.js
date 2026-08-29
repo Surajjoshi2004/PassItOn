@@ -9,7 +9,8 @@ import conversationRoutes from "./routes/conversation.routes.js";
 
 const app = express();
 
-app.use(express.json());
+// Listing photos are stored as small data URLs for this local deployment.
+app.use(express.json({ limit: "8mb" }));
 
 app.get("/", (req, res) => {
   res.json({ message: "PassItOn API is running" });
