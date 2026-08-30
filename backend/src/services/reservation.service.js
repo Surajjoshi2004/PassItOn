@@ -1,53 +1,36 @@
-import mongoose from "mongoose";
 import Listing from "../models/Listing.js";
 import Reservation from "../models/Reservation.js";
 
 export const createReservation = async ({ listingId, buyerId }) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     const listing = await Listing.findOneAndUpdate(
-      { _id: listingId, status: "active" },
+      { _id: listingId, status: "active", seller: { $ne: buyerId } },
       { $set: { status: "reserved" } },
-      { new: true, session }
+      { new: true }
     ).populate("seller", "_id");
 
     if (!listing) {
-      await session.abortTransaction();
-      return { reservation: null, error: "LISTING_NOT_AVAILABLE" };
+      const originalListing = await Listing.findById(listingId).select("seller");
+      return {
+        reservation: null,
+        error: originalListing?.seller?.toString() === buyerId
+          ? "CANNOT_RESERVE_OWN"
+          : "LISTING_NOT_AVAILABLE",
+      };
     }
 
-    if (listing.seller._id.toString() === buyerId) {
-      await session.abortTransaction();
-      return { reservation: null, error: "CANNOT_RESERVE_OWN" };
-    }
-
-    const existingPending = await Reservation.findOne({
+    const reservation = await Reservation.create({
       listing: listingId,
+      buyer: buyerId,
       status: "pending",
-    }).session(session);
+    });
 
-    if (existingPending) {
-      await session.abortTransaction();
-      return { reservation: null, error: "ALREADY_RESERVED" };
-    }
-
-    const reservation = await Reservation.create(
-      [{ listing: listingId, buyer: buyerId, status: "pending" }],
-      { session }
-    );
-
-    await session.commitTransaction();
-    return { reservation: reservation[0], error: null };
+    return { reservation, error: null };
   } catch (error) {
-    await session.abortTransaction();
     if (error.code === 11000) {
       return { reservation: null, error: "ALREADY_RESERVED" };
     }
     throw error;
-  } finally {
-    session.endSession();
   }
 };
 
@@ -58,52 +41,40 @@ const sellerOwnsListing = (listing, sellerId) =>
     : listing.seller.toString()) === sellerId;
 
 const updateReservationAndListing = async ({ reservationId, sellerId, buyerId, newStatus, listingAction }) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     const reservation = await Reservation.findOne({
       _id: reservationId,
       status: "pending",
     })
-      .populate("listing", "seller status")
-      .session(session);
+      .populate("listing", "seller status");
 
     if (!reservation) {
-      await session.abortTransaction();
       return { reservation: null, error: "NOT_FOUND" };
     }
 
     const listing = reservation.listing;
 
     if (sellerId && listing.seller._id.toString() !== sellerId) {
-      await session.abortTransaction();
       return { reservation: null, error: "FORBIDDEN" };
     }
 
     if (buyerId && reservation.buyer.toString() !== buyerId) {
-      await session.abortTransaction();
       return { reservation: null, error: "FORBIDDEN" };
     }
 
     reservation.status = newStatus;
-    await reservation.save({ session });
+    await reservation.save();
 
     if (listingAction) {
       await Listing.findOneAndUpdate(
         { _id: listing._id },
-        { $set: { status: listingAction } },
-        { session }
+        { $set: { status: listingAction } }
       );
     }
 
-    await session.commitTransaction();
     return { reservation, error: null };
   } catch (error) {
-    await session.abortTransaction();
     throw error;
-  } finally {
-    session.endSession();
   }
 };
 

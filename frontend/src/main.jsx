@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { ArrowUpRight, Bell, BookOpen, ChevronDown, Eye, EyeOff, Heart, Laptop, Menu, Search, Send, Sofa, Sparkles, X } from "lucide-react";
+import { ArrowUpRight, Bell, BookOpen, ChevronDown, Eye, EyeOff, Heart, Laptop, Menu, MessageCircle, Search, Send, Sofa, Sparkles, X } from "lucide-react";
 import "./styles.css";
 
 const API = import.meta.env.VITE_API_URL || "";
@@ -13,6 +13,10 @@ async function api(path, options = {}) {
   const response = await fetch(`${API}/api${path}`, { ...options, headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers } });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.message || "Something went wrong");
+  if (path === "/reservations" && options.method === "POST") {
+    const conversation = await api("/conversations", { method: "POST", body: options.body });
+    window.dispatchEvent(new CustomEvent("passiton:conversation", { detail: conversation.data }));
+  }
   return payload;
 }
 
@@ -106,4 +110,56 @@ function ListingModal({ onClose, onSuccess }) {
   </form></div>;
 }
 
-createRoot(document.getElementById("root")).render(<App />);
+function ChatDock() {
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("passiton_user") || "null"));
+  const [open, setOpen] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState("");
+
+  const loadConversations = async () => {
+    if (!user) return;
+    try { const result = await api("/conversations"); setConversations(result.data || []); }
+    catch (e) { setError(e.message); }
+  };
+  const loadMessages = async id => {
+    try { const result = await api(`/conversations/${id}/messages`); setMessages(result.data || []); }
+    catch (e) { setError(e.message); }
+  };
+  const chooseConversation = conversation => { setSelected(conversation); setError(""); loadMessages(conversation._id); };
+
+  useEffect(() => {
+    const refreshUser = () => setUser(JSON.parse(localStorage.getItem("passiton_user") || "null"));
+    const interval = window.setInterval(refreshUser, 1000);
+    const openConversation = event => { setOpen(true); loadConversations(); if (event.detail) setSelected(event.detail); };
+    window.addEventListener("passiton:conversation", openConversation);
+    return () => { window.clearInterval(interval); window.removeEventListener("passiton:conversation", openConversation); };
+  }, [user]);
+  useEffect(() => { if (open && user) loadConversations(); }, [open, user]);
+  useEffect(() => {
+    if (!selected?._id || !open) return undefined;
+    loadMessages(selected._id);
+    const interval = window.setInterval(() => loadMessages(selected._id), 4000);
+    return () => window.clearInterval(interval);
+  }, [selected?._id, open]);
+
+  const sendMessage = async event => {
+    event.preventDefault();
+    if (!draft.trim() || !selected) return;
+    try {
+      const result = await api(`/conversations/${selected._id}/messages`, { method: "POST", body: JSON.stringify({ body: draft.trim() }) });
+      setMessages(current => [...current, result.data]); setDraft(""); loadConversations();
+    } catch (e) { setError(e.message); }
+  };
+
+  if (!user) return null;
+  const unread = conversations.reduce((total, conversation) => total + (conversation.unreadCount || 0), 0);
+  return <><button className="chat-launch" onClick={() => setOpen(!open)} aria-label="Open messages"><MessageCircle size={20}/>{unread > 0 && <span>{unread}</span>}</button>
+    {open && <aside className="chat-dock"><header><div><p className="eyebrow">MESSAGES</p><h2>{selected ? selected.otherUser?.name || "Conversation" : "Your chats"}</h2></div><button className="chat-logout" onClick={() => { localStorage.removeItem("passiton_token"); localStorage.removeItem("passiton_user"); window.location.reload(); }}>Log out</button><button className="close" onClick={() => setOpen(false)}><X size={20}/></button></header>
+      <div className="chat-content">{selected ? <><button className="back-to-chats" onClick={() => { setSelected(null); setMessages([]); }}>← All conversations</button><p className="chat-listing">About: {selected.listing?.title || "an item"}</p><div className="messages">{messages.length ? messages.map(message => <div className={message.sender === user.id ? "message mine" : "message"} key={message._id}><span>{message.body}</span><small>{new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</small></div>) : <p className="chat-empty">Start the conversation.</p>}</div><form className="message-form" onSubmit={sendMessage}><input value={draft} onChange={e => setDraft(e.target.value)} maxLength="3000" placeholder="Write a message…"/><button aria-label="Send message"><Send size={17}/></button></form></> : <div className="conversation-list">{conversations.length ? conversations.map(conversation => <button key={conversation._id} onClick={() => chooseConversation(conversation)}><strong>{conversation.otherUser?.name || "Student"}</strong><span>{conversation.lastMessage || `About: ${conversation.listing?.title || "an item"}`}</span>{conversation.unreadCount > 0 && <b>{conversation.unreadCount}</b>}</button>) : <p className="chat-empty">Reserve an item to start chatting with its seller.</p>}</div>}{error && <p className="chat-error">{error}</p>}</div>
+    </aside>}</>;
+}
+
+createRoot(document.getElementById("root")).render(<><App /><ChatDock /></>);
