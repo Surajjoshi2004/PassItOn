@@ -84,7 +84,7 @@ function AuthModal({ onClose, onSuccess }) {
         onSuccess(result.data);
       } else {
         setMode("login");
-        setError("Account created. Please verify your email, then log in.");
+        setError("Account created. You can now log in.");
       }
     } catch (x) { setError(x.message); }
   };

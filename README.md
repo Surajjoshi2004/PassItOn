@@ -2,6 +2,8 @@
 
 PassItOn is a campus-verified secondhand marketplace. Students can list useful items, discover affordable finds, reserve listings, review handoffs, and chat in real time.
 
+**Live demo:** [http://3.110.136.40/#browse](http://3.110.136.40/#browse) (temporary HTTP link; HTTPS setup is pending AWS account verification).
+
 ## Architecture
 
 ```text
@@ -24,7 +26,7 @@ The backend keeps controllers thin and puts business rules in services. REST and
 
 ## Features
 
-- College-email registration (`@lpu.co.in` and `@lpu.in`), email verification, login, and JWT-protected routes.
+- Registration restricted to `@lpu.com` and `@lpu.in` addresses, login, and JWT-protected routes.
 - Listing creation, search/filtering, update, deletion, reservations, reviews, and reports.
 - Seller/buyer authorization for listings, reservations, conversations, and messages.
 - Socket.IO authentication, conversation rooms, real-time messages, and recipient notifications.

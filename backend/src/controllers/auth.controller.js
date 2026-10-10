@@ -1,18 +1,13 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
-import { ALLOWED_EMAIL_DOMAINS, PORT } from "../config/env.js";
+import { ALLOWED_EMAIL_DOMAINS } from "../config/env.js";
 import { generateAuthToken } from "../utils/token.js";
 
 const EMAIL_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
-const generateEmailToken = () => {
-  return crypto.randomBytes(32).toString("hex");
-};
-
-const hashToken = (token) => {
-  return crypto.createHash("sha256").update(token).digest("hex");
-};
+const generateEmailToken = () => crypto.randomBytes(32).toString("hex");
+const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
 
 const isEmailAllowed = (email) => {
   const domain = email.trim().toLowerCase().split("@")[1];
@@ -46,9 +41,6 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    const rawToken = generateEmailToken();
-    const hashedToken = hashToken(rawToken);
-
     const user = await User.create({
       name,
       email,
@@ -56,16 +48,12 @@ export const registerUser = async (req, res) => {
       college,
       hostel: hostel || "",
       graduationYear,
-      emailVerificationToken: hashedToken,
-      emailVerificationExpires: new Date(Date.now() + EMAIL_TOKEN_EXPIRY_MS),
+      isEmailVerified: true,
     });
-
-    const verifyUrl = `http://localhost:${PORT}/api/auth/verify-email/${rawToken}`;
-    console.log(`[DEV] Verify email for ${email}: ${verifyUrl}`);
 
     return res.status(201).json({
       success: true,
-      message: "User registered successfully. Please verify your email.",
+      message: "Account created successfully. You can now log in.",
       data: {
         id: user._id,
         name: user.name,
@@ -75,9 +63,6 @@ export const registerUser = async (req, res) => {
         graduationYear: user.graduationYear,
         role: user.role,
         createdAt: user.createdAt,
-      },
-      dev: {
-        verificationUrl: verifyUrl,
       },
     });
   } catch (error) {
@@ -219,13 +204,6 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: GENERIC_AUTH_ERROR,
-      });
-    }
-
-    if (!user.isEmailVerified) {
-      return res.status(403).json({
-        success: false,
-        message: "Please verify your email before logging in",
       });
     }
 

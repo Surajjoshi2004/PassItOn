@@ -7,7 +7,7 @@ export const MONGO_URI = process.env.MONGO_URI;
 export const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 export const ALLOWED_EMAIL_DOMAINS = process.env.ALLOWED_EMAIL_DOMAINS
   ? process.env.ALLOWED_EMAIL_DOMAINS.split(",")
-  : ["lpu.co.in", "lpu.in"];
+  : ["lpu.com", "lpu.in"];
 export const JWT_SECRET = process.env.JWT_SECRET;
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 export const GRADUATING_SOON_WINDOW_DAYS = Number(
