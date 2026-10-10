@@ -56,6 +56,9 @@ export const listReviewsForUser = (userId) => {
     .sort({ createdAt: -1 });
 };
 
+export const listReviewsByReviewer = (reviewerId) =>
+  Review.find({ reviewer: reviewerId }).select("reservation");
+
 export const deleteReview = async ({ reviewId, reviewerId }) => {
   const review = await Review.findById(reviewId);
 

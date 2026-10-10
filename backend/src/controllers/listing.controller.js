@@ -8,6 +8,7 @@ import {
   deleteListing,
 } from "../services/listing.service.js";
 import { findPotentialDuplicates } from "../services/duplicate-listing.service.js";
+import { getCachedJson, invalidateListingCache } from "../config/redis-cache.js";
 
 const isValidObjectId = (id) => mongoose.isValidObjectId(id);
 
@@ -43,6 +44,7 @@ export const createListingHandler = async (req, res) => {
       sellerId: req.user.id,
       data: listingData,
     });
+    await invalidateListingCache();
     return res.status(201).json({
       success: true,
       message: "Listing created successfully",
@@ -136,29 +138,31 @@ export const listListingsHandler = async (req, res) => {
       });
     }
 
-    const result = await listListings({
-      search: req.query.search,
-      category: req.query.category,
-      condition: req.query.condition,
-      hostel: req.query.hostel,
-      status: req.query.status,
-      minPrice,
-      maxPrice,
-      sort: req.query.sort,
-      page,
-      limit,
+    const payload = await getCachedJson(`passiton:listings:${req.originalUrl}`, async () => {
+      const result = await listListings({
+        search: req.query.search,
+        category: req.query.category,
+        condition: req.query.condition,
+        hostel: req.query.hostel,
+        status: req.query.status,
+        minPrice,
+        maxPrice,
+        sort: req.query.sort,
+        page,
+        limit,
+      });
+      return {
+        success: true,
+        data: result.listings,
+        pagination: {
+          page: result.page,
+          limit: result.limit,
+          total: result.total,
+          totalPages: result.totalPages,
+        },
+      };
     });
-
-    return res.status(200).json({
-      success: true,
-      data: result.listings,
-      pagination: {
-        page: result.page,
-        limit: result.limit,
-        total: result.total,
-        totalPages: result.totalPages,
-      },
-    });
+    return res.status(200).json(payload);
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -169,13 +173,11 @@ export const listListingsHandler = async (req, res) => {
 
 export const graduatingSoonHandler = async (req, res) => {
   try {
-    const listings = await listGraduatingSoonListings();
-
-    return res.status(200).json({
-      success: true,
-      count: listings.length,
-      data: listings,
+    const payload = await getCachedJson(`passiton:listings:${req.originalUrl}`, async () => {
+      const listings = await listGraduatingSoonListings();
+      return { success: true, count: listings.length, data: listings };
     });
+    return res.status(200).json(payload);
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -276,6 +278,8 @@ export const updateListingHandler = async (req, res) => {
       });
     }
 
+    await invalidateListingCache();
+
     return res.status(200).json({
       success: true,
       message: "Listing updated successfully",
@@ -326,6 +330,8 @@ export const deleteListingHandler = async (req, res) => {
         message: "You are not authorized to delete this listing",
       });
     }
+
+    await invalidateListingCache();
 
     return res.status(200).json({
       success: true,

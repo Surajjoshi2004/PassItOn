@@ -4,6 +4,7 @@ import {
   listReviewsForUser,
   deleteReview,
   getAverageRating,
+  listReviewsByReviewer,
 } from "../services/review.service.js";
 
 const isValidObjectId = (id) => mongoose.isValidObjectId(id);
@@ -108,6 +109,18 @@ export const listReviewsHandler = async (req, res) => {
       success: false,
       message: "Internal server error",
     });
+  }
+};
+
+export const listMyReviewsHandler = async (req, res) => {
+  try {
+    const reviews = await listReviewsByReviewer(req.user.id);
+    return res.status(200).json({
+      success: true,
+      data: reviews.map((review) => review.reservation.toString()),
+    });
+  } catch {
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 

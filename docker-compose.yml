@@ -10,6 +10,15 @@ services:
       timeout: 5s
       retries: 12
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
   backend:
     build:
       context: ./backend
@@ -21,6 +30,7 @@ services:
       NODE_ENV: production
       PORT: 5000
       MONGO_URI: mongodb://mongo:27017/passiton
+      REDIS_URL: redis://redis:6379
       ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS:-lpu.co.in,lpu.in}
       JWT_SECRET: ${JWT_SECRET:-replace-this-local-secret}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
@@ -30,6 +40,8 @@ services:
       DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-DemoPass123!}
     depends_on:
       mongo:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 volumes:

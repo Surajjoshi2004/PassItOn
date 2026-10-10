@@ -1,5 +1,6 @@
 import Listing from "../models/Listing.js";
 import Reservation from "../models/Reservation.js";
+import { invalidateListingCache } from "../config/redis-cache.js";
 
 export const createReservation = async ({ listingId, buyerId }) => {
   try {
@@ -24,6 +25,8 @@ export const createReservation = async ({ listingId, buyerId }) => {
       buyer: buyerId,
       status: "pending",
     });
+
+    await invalidateListingCache();
 
     return { reservation, error: null };
   } catch (error) {
@@ -72,6 +75,8 @@ const updateReservationAndListing = async ({ reservationId, sellerId, buyerId, n
       );
     }
 
+    await invalidateListingCache();
+
     return { reservation, error: null };
   } catch (error) {
     throw error;
@@ -104,6 +109,10 @@ export const cancelReservation = ({ reservationId, buyerId }) =>
 
 export const listReservations = async ({ listingId, buyerId, status, sellerId }) => {
   const filter = {};
+  if (sellerId && !listingId) {
+    const listings = await Listing.find({ seller: sellerId }).select("_id");
+    filter.listing = { $in: listings.map((listing) => listing._id) };
+  }
   if (listingId) {
     if (sellerId) {
       const listing = await Listing.findOne({ _id: listingId, seller: sellerId }).select("_id");
@@ -117,7 +126,7 @@ export const listReservations = async ({ listingId, buyerId, status, sellerId })
   if (status) filter.status = status;
 
   const reservations = await Reservation.find(filter)
-    .populate("listing", "title price images category")
+    .populate("listing", "title price images category status seller")
     .populate("buyer", "name email college")
     .sort({ createdAt: -1 });
 

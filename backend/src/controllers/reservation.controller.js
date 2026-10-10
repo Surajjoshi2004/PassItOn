@@ -68,6 +68,13 @@ export const listReservationsHandler = async (req, res) => {
   try {
     const { listingId, status } = req.query;
 
+    if (req.query.mine !== "true" && req.query.received !== "true" && !listingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Choose mine=true or received=true",
+      });
+    }
+
     if (listingId && !isValidObjectId(listingId)) {
       return res.status(400).json({
         success: false,
@@ -78,7 +85,7 @@ export const listReservationsHandler = async (req, res) => {
     const { reservations, error } = await listReservations({
       listingId,
       buyerId: req.query.mine === "true" ? req.user.id : undefined,
-      sellerId: listingId ? req.user.id : undefined,
+      sellerId: listingId || req.query.received === "true" ? req.user.id : undefined,
       status,
     });
 

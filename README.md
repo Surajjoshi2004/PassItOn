@@ -18,7 +18,7 @@ Express API (Node.js)
 - `frontend/` — Vite React single-page application.
 - `backend/src/` — Express API, JWT authentication, services, models, and Socket.IO.
 - `backend/test/` — isolated Node test suite with mocked persistence.
-- `docker-compose.yml` — local backend and MongoDB orchestration.
+- `docker-compose.yml` — local backend, MongoDB, and Redis orchestration.
 
 The backend keeps controllers thin and puts business rules in services. REST and Socket.IO message delivery share the same message service, so messages sent by either transport are persisted consistently.
 
@@ -34,7 +34,7 @@ The backend keeps controllers thin and puts business rules in services. REST and
 
 - Node.js 22+
 - npm
-- MongoDB 7/8 (or Docker Desktop)
+- MongoDB 7/8 and Redis 7 (or Docker Desktop)
 
 ## Local setup
 
@@ -44,7 +44,7 @@ The backend keeps controllers thin and puts business rules in services. REST and
 cd backend
 npm install
 Copy-Item .env.example .env
-# Edit .env and set a strong JWT_SECRET and your MongoDB URI
+# Edit .env and set a strong JWT_SECRET, MongoDB URI, and REDIS_URL
 npm run dev
 ```
 
@@ -81,7 +81,7 @@ $env:JWT_SECRET = "a-long-random-secret"
 docker compose up --build
 ```
 
-This starts MongoDB and the backend. MongoDB has a healthcheck, and the backend waits for it before starting. Configuration is injected at runtime; `.env` files and secrets are excluded from the image by `.dockerignore`.
+This starts MongoDB, Redis, and the backend. MongoDB and Redis have healthchecks, and the backend waits for both before starting. Public listing feeds are cached in Redis for 45 seconds; listing and reservation changes clear those cached feeds. If Redis is unavailable, the API serves directly from MongoDB. Configuration is injected at runtime; `.env` files and secrets are excluded from the image by `.dockerignore`.
 
 Check the running API:
 

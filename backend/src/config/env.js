@@ -4,6 +4,7 @@ dotenv.config({ path: process.env.NODE_ENV === "test" ? ".env.test" : ".env" });
 
 export const PORT = process.env.PORT || 5000;
 export const MONGO_URI = process.env.MONGO_URI;
+export const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 export const ALLOWED_EMAIL_DOMAINS = process.env.ALLOWED_EMAIL_DOMAINS
   ? process.env.ALLOWED_EMAIL_DOMAINS.split(",")
   : ["lpu.co.in", "lpu.in"];
