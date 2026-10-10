@@ -138,4 +138,3 @@ export const invalidateListingCache = async () => {
     // TTL expiry bounds staleness when Redis is unavailable.
   }
 };
-
