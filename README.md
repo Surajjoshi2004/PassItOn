@@ -18,7 +18,7 @@ Express API (Node.js)
 - `frontend/` — Vite React single-page application.
 - `backend/src/` — Express API, JWT authentication, services, models, and Socket.IO.
 - `backend/test/` — isolated Node test suite with mocked persistence.
-- `docker-compose.yml` — local backend, MongoDB, and Redis orchestration.
+- `docker-compose.yml` — frontend, backend, MongoDB, and Redis orchestration.
 
 The backend keeps controllers thin and puts business rules in services. REST and Socket.IO message delivery share the same message service, so messages sent by either transport are persisted consistently.
 
@@ -74,19 +74,24 @@ Open `http://localhost:5173`. Vite proxies `/api` requests to the local backend.
 
 ## Docker
 
-From the repository root:
+From the repository root, using Git Bash:
 
 ```powershell
-$env:JWT_SECRET = "a-long-random-secret"
-docker compose up --build
+cp .env.example .env
 ```
 
-This starts MongoDB, Redis, and the backend. MongoDB and Redis have healthchecks, and the backend waits for both before starting. Public listing feeds are cached in Redis for 45 seconds; listing and reservation changes clear those cached feeds. If Redis is unavailable, the API serves directly from MongoDB. Configuration is injected at runtime; `.env` files and secrets are excluded from the image by `.dockerignore`.
+Edit `.env` and replace `JWT_SECRET` with a long random value. Then start the full app:
+
+```bash
+docker compose up --build -d
+```
+
+This starts the frontend, backend, MongoDB, and Redis. Open `http://localhost`. The backend is also available on `http://localhost:5000` for local API work. MongoDB and Redis have healthchecks, and the backend waits for both before starting. Public listing feeds are cached in Redis for 45 seconds; listing and reservation changes clear those cached feeds. If Redis is unavailable, the API serves directly from MongoDB. `.env` files and secrets are excluded from the images and Git.
 
 Check the running API:
 
 ```powershell
-Invoke-WebRequest http://localhost:5000/
+curl http://localhost:5000/
 ```
 
 Stop services with `docker compose down`. Add `-v` only when you intentionally want to remove the local MongoDB volume.
