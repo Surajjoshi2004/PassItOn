@@ -36,6 +36,15 @@ export const emitNewMessage = ({ message, conversation }) => {
   });
 };
 
+export const emitNewConversation = (conversation) => {
+  if (!io || !conversation) return;
+
+  io.to(userRoom(conversation.seller.toString())).emit("notification:new", {
+    type: "NEW_CONVERSATION",
+    conversationId: conversation._id.toString(),
+  });
+};
+
 export const initializeSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: { origin: true, credentials: true },
@@ -50,6 +59,11 @@ export const initializeSocket = (httpServer) => {
 
     try {
       const payload = jwt.verify(token, JWT_SECRET);
+
+      if (!payload.isEmailVerified) {
+        return next(new Error("Email verification required"));
+      }
+
       socket.user = {
         id: payload.sub,
         role: payload.role,

@@ -10,12 +10,15 @@ import conversationRoutes from "./routes/conversation.routes.js";
 const app = express();
 
 // Listing photos are stored as small data URLs for this local deployment.
+//registering a middleware
+//without a json parser it would give as an javascript object
 app.use(express.json({ limit: "8mb" }));
 
 app.get("/", (req, res) => {
   res.json({ message: "PassItOn API is running" });
 });
 
+//middlewares for differen
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/listings", listingRoutes);

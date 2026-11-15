@@ -27,20 +27,27 @@ export const startOrGetConversation = async ({ listingId, buyerId }) => {
     return { conversation: null, error: "CANNOT_MESSAGE_SELF" };
   }
 
+  const existing = await Conversation.findOne({
+    listing: listingId,
+    buyer: buyerId,
+    seller: sellerId,
+  });
+  if (existing) return { conversation: existing, error: null, created: false };
+
   try {
     let conversation = await Conversation.findOneAndUpdate(
       { listing: listingId, buyer: buyerId, seller: sellerId },
       { $setOnInsert: { buyer: buyerId, seller: sellerId, listing: listingId } },
       { upsert: true, new: true }
     );
-    return { conversation, error: null };
+    return { conversation, error: null, created: true };
   } catch (error) {
     if (error.code === 11000) {
       const existing = await Conversation.findOne({
         listing: listingId,
         buyer: buyerId,
       });
-      return { conversation: existing, error: null };
+      return { conversation: existing, error: null, created: false };
     }
     throw error;
   }

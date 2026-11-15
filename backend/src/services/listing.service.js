@@ -63,6 +63,7 @@ const buildFilter = ({ search, category, condition, hostel, status, minPrice, ma
     filter.$or = [
       { title: { $regex: search, $options: "i" } },
       { description: { $regex: search, $options: "i" } },
+      { category: { $regex: search, $options: "i" } },
     ];
   }
 

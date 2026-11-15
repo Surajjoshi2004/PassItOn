@@ -37,3 +37,15 @@ export const authenticate = (req, res, next) => {
     });
   }
 };
+
+export const requireVerifiedEmail = (req, res, next) => {
+  if (!req.user?.isEmailVerified) {
+    return res.status(403).json({
+      success: false,
+      code: "EMAIL_NOT_VERIFIED",
+      message: "Email verification required. Please verify your email to use this feature.",
+    });
+  }
+
+  return next();
+};

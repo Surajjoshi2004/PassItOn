@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { authenticate } from "../middleware/auth.middleware.js";
+import {
+  authenticate,
+  requireVerifiedEmail,
+} from "../middleware/auth.middleware.js";
 import {
   createReportHandler,
   listMyReportsHandler,
@@ -7,7 +10,7 @@ import {
 
 const router = Router();
 
-router.post("/", authenticate, createReportHandler);
-router.get("/me", authenticate, listMyReportsHandler);
+router.post("/", authenticate, requireVerifiedEmail, createReportHandler);
+router.get("/me", authenticate, requireVerifiedEmail, listMyReportsHandler);
 
 export default router;

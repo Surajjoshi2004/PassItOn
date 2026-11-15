@@ -4,6 +4,7 @@ import {
   listConversationsForUser,
   getConversationById,
 } from "../services/conversation.service.js";
+import { emitNewConversation } from "../realtime/socket.js";
 
 const isValidObjectId = (id) => mongoose.isValidObjectId(id);
 
@@ -45,7 +46,7 @@ export const startConversationHandler = async (req, res) => {
       });
     }
 
-    const { conversation, error } = await startOrGetConversation({
+    const { conversation, error, created } = await startOrGetConversation({
       listingId,
       buyerId: req.user.id,
     });
@@ -53,6 +54,8 @@ export const startConversationHandler = async (req, res) => {
     if (error) {
       return respondError(res, error);
     }
+
+    if (created) emitNewConversation(conversation);
 
     return res.status(201).json({
       success: true,

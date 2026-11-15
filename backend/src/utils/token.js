@@ -4,7 +4,7 @@ import { JWT_SECRET, JWT_EXPIRES_IN } from "../config/env.js";
 export const generateAuthToken = (user) => {
   return jwt.sign(
     {
-      sub: user._id.toString(),
+      sub: user._id.toString(), //mongodb stores in jsobject
       role: user.role,
       isEmailVerified: user.isEmailVerified,
     },
@@ -12,3 +12,5 @@ export const generateAuthToken = (user) => {
     { expiresIn: JWT_EXPIRES_IN }
   );
 };
+
+

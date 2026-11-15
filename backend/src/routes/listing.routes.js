@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { authenticate } from "../middleware/auth.middleware.js";
+import {
+  authenticate,
+  requireVerifiedEmail,
+} from "../middleware/auth.middleware.js";
 import {
   listListingsHandler,
   graduatingSoonHandler,
@@ -14,10 +17,10 @@ const router = Router();
 
 router.get("/", listListingsHandler);
 router.get("/graduating-soon", graduatingSoonHandler);
-router.post("/duplicate-check", authenticate, duplicateCheckHandler);
-router.post("/", authenticate, createListingHandler);
+router.post("/duplicate-check", authenticate, requireVerifiedEmail, duplicateCheckHandler);
+router.post("/", authenticate, requireVerifiedEmail, createListingHandler);
 router.get("/:id", getListingHandler);
-router.patch("/:id", authenticate, updateListingHandler);
-router.delete("/:id", authenticate, deleteListingHandler);
+router.patch("/:id", authenticate, requireVerifiedEmail, updateListingHandler);
+router.delete("/:id", authenticate, requireVerifiedEmail, deleteListingHandler);
 
 export default router;

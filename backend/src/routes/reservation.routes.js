@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { authenticate } from "../middleware/auth.middleware.js";
+import {
+  authenticate,
+  requireVerifiedEmail,
+} from "../middleware/auth.middleware.js";
 import {
   createReservationHandler,
   listReservationsHandler,
@@ -10,7 +13,7 @@ import {
 
 const router = Router();
 
-router.use(authenticate);
+router.use(authenticate, requireVerifiedEmail);
 
 router.post("/", createReservationHandler);
 router.get("/", listReservationsHandler);

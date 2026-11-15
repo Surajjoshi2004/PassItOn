@@ -5,8 +5,10 @@ import { PORT } from "./config/env.js";
 import { initializeSocket } from "./realtime/socket.js";
 import { seedDemoUser } from "./scripts/seedDemoUser.js";
 
+//creates an http server instance for underlying http server for real time communication 
 const httpServer = createServer(app);
 initializeSocket(httpServer);
+
 
 connectDB().then(async () => {
   // Local demo data is deliberately opt-in via SEED_DEMO_USER.
